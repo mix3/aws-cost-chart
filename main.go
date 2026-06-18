@@ -127,10 +127,14 @@ func generateChart(dates []string, services []string, seriesCosts [][]float64, o
 	})
 	if err := p.BarChart(opt); err != nil {
 		return err
-	} else if buf, err := p.Bytes(); err != nil {
-		return err
-	} else if err := os.WriteFile(outputPath, buf, 0644); err != nil {
+	}
+	buf, err := p.Bytes()
+	if err != nil {
 		return err
 	}
-	return nil
+	if outputPath == "-" {
+		_, err = os.Stdout.Write(buf)
+		return err
+	}
+	return os.WriteFile(outputPath, buf, 0644)
 }
