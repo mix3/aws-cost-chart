@@ -52,6 +52,7 @@ func fetchDailyCostsByService(ctx context.Context, days int) (dates []string, se
 
 	end := time.Now()
 	start := end.AddDate(0, 0, -days)
+	metrics := "NetAmortizedCost"
 
 	out, err := ce.GetCostAndUsage(ctx, &costexplorer.GetCostAndUsageInput{
 		TimePeriod: &types.DateInterval{
@@ -59,7 +60,7 @@ func fetchDailyCostsByService(ctx context.Context, days int) (dates []string, se
 			End:   aws.String(end.Format("2006-01-02")),
 		},
 		Granularity: types.GranularityDaily,
-		Metrics:     []string{"UnblendedCost"},
+		Metrics:     []string{metrics},
 		GroupBy: []types.GroupDefinition{
 			{
 				Type: types.GroupDefinitionTypeDimension,
@@ -99,7 +100,7 @@ func fetchDailyCostsByService(ctx context.Context, days int) (dates []string, se
 			}
 			svc := g.Keys[0]
 			var amount float64
-			if v, ok := g.Metrics["UnblendedCost"]; ok {
+			if v, ok := g.Metrics[metrics]; ok {
 				fmt.Sscanf(*v.Amount, "%f", &amount)
 			}
 			costMap[svc][i] = amount
