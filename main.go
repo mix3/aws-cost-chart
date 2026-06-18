@@ -71,6 +71,7 @@ func fetchDailyCostsByService(ctx context.Context, days int) (dates []string, se
 		return nil, nil, nil, err
 	}
 
+	// 日付リストとサービス別の日別コストを収集
 	serviceSet := map[string]struct{}{}
 	for _, r := range out.ResultsByTime {
 		dates = append(dates, *r.TimePeriod.Start)
@@ -81,13 +82,14 @@ func fetchDailyCostsByService(ctx context.Context, days int) (dates []string, se
 		}
 	}
 
+	allServices := make([]string, 0, len(serviceSet))
 	for svc := range serviceSet {
-		services = append(services, svc)
+		allServices = append(allServices, svc)
 	}
-	sort.Strings(services)
+	sort.Strings(allServices)
 
 	costMap := map[string][]float64{}
-	for _, svc := range services {
+	for _, svc := range allServices {
 		costMap[svc] = make([]float64, len(dates))
 	}
 	for i, r := range out.ResultsByTime {
@@ -104,8 +106,49 @@ func fetchDailyCostsByService(ctx context.Context, days int) (dates []string, se
 		}
 	}
 
-	for _, svc := range services {
-		seriesCosts = append(seriesCosts, costMap[svc])
+	// サービスごとの合計コストを計算してソート
+	type svcTotal struct {
+		name  string
+		total float64
+	}
+	totals := make([]svcTotal, 0, len(allServices))
+	for _, svc := range allServices {
+		var sum float64
+		for _, v := range costMap[svc] {
+			sum += v
+		}
+		totals = append(totals, svcTotal{svc, sum})
+	}
+	sort.Slice(totals, func(i, j int) bool {
+		return totals[i].total > totals[j].total
+	})
+
+	// 上位 8 件 + Other に集約
+	const topN = 8
+	otherCosts := make([]float64, len(dates))
+
+	for i, st := range totals {
+		if i < topN {
+			services = append(services, st.name)
+			seriesCosts = append(seriesCosts, costMap[st.name])
+		} else {
+			for j, v := range costMap[st.name] {
+				otherCosts[j] += v
+			}
+		}
+	}
+
+	// Other が 0 でなければ追加
+	hasOther := false
+	for _, v := range otherCosts {
+		if v > 0 {
+			hasOther = true
+			break
+		}
+	}
+	if hasOther {
+		services = append(services, "Other")
+		seriesCosts = append(seriesCosts, otherCosts)
 	}
 
 	return dates, services, seriesCosts, nil
