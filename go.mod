@@ -1,4 +1,4 @@
-module github.com/mix3/go-cost-explorer-stack-chart
+module github.com/mix3/aws-cost-chart
 
 go 1.24.4
 

@@ -1,1 +1,1 @@
-# go-cost-explorer-stack-chart
+# aws-cost-chart
