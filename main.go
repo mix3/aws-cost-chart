@@ -116,9 +116,8 @@ func generateChart(dates []string, services []string, seriesCosts [][]float64, o
 	opt.StackSeries = charts.Ptr(true)
 	opt.CategoryAxis.Labels = dates
 	opt.Legend = charts.LegendOption{
-		SeriesNames:  services,
-		Offset:       charts.OffsetRight,
-		OverlayChart: charts.Ptr(true),
+		SeriesNames: services,
+		Offset:      charts.OffsetRight,
 	}
 	p := charts.NewPainter(charts.PainterOptions{
 		OutputFormat: charts.ChartOutputPNG,
